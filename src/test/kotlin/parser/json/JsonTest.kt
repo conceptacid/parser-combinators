@@ -43,7 +43,7 @@ class JsonTest {
         val chars = ('a'..'z').toList() + ('A'..'Z').toList()
         val rand = Random()
 
-        val size = 6 * 1024 // 5 is ok, 6 is too big
+        val size = 2 * 1024 // 5 is ok, 6 is too big
         val text = Array<Char>(size) { chars[rand.nextInt(chars.size)] }.joinToString("")
         val input = "\"$text\""
         val output = JString(text)
