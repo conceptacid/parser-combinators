@@ -2,10 +2,8 @@ package parser.idl
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import parser.core.Failure
-import parser.core.State
-import parser.core.Success
-import parser.core.UnexpectedToken
+import parser.core.*
+import java.io.File
 
 
 class IdlParsersTest {
@@ -21,7 +19,7 @@ class IdlParsersTest {
     @Test
     fun `Custom Type Field Parser`() {
         val input = "abc:A, tag = 1;"
-        val output = Field(FieldIdentifier("abc"), FieldType.CustomType(TypeIdentifier("A")), 1)
+        val output = Field(Identifier("abc"), FieldType.CustomType(TypeIdentifier("A")), 1)
         assertThat(pField().run(State(input)))
                 .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
     }
@@ -29,7 +27,7 @@ class IdlParsersTest {
     @Test
     fun `String Type Field Parser`() {
         val input = "abc:String ,tag= 1;"
-        val output = Field(FieldIdentifier("abc"), FieldType.String, 1)
+        val output = Field(Identifier("abc"), FieldType.String, 1)
         assertThat(pField().run(State(input)))
                 .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
     }
@@ -45,9 +43,9 @@ class IdlParsersTest {
 
 
         val output = Data(TypeIdentifier("AbcCommand"), listOf(
-                Field(FieldIdentifier("line1"), FieldType.CustomType(TypeIdentifier("A")), 1),
-                Field(FieldIdentifier("line2"), FieldType.Int32, 2),
-                Field(FieldIdentifier("line3"), FieldType.String, 3)
+                Field(Identifier("line1"), FieldType.CustomType(TypeIdentifier("A")), 1),
+                Field(Identifier("line2"), FieldType.Int32, 2),
+                Field(Identifier("line3"), FieldType.String, 3)
         ))
 
         assertThat(pData().run(State(input)))
@@ -61,6 +59,49 @@ class IdlParsersTest {
 
         val err3 = "message AbcCommand { line1 A = 1; }"
         assertThat(pData().run(State(err3))).isInstanceOf(Failure::class.java)
+
+    }
+
+    @Test
+    fun `One Import Parser`() {
+        val input = "import bla.fazl"
+        val output = Import("bla.fazl")
+        assertThat(pImport().run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+    }
+
+    @Test
+    fun `Many Imports Parser`() {
+        val input = """
+                import bla.fazl
+                import upf.murgl"""
+
+        val output = listOf(
+                Import("bla.fazl"),
+                Import("upf.murgl"))
+
+        val p = zeroOrMore(pImport() andl delimiters())
+        assertThat(p.run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+    }
+
+    @Test
+    fun `real file`() {
+
+        println(System.getProperty("user.dir"))
+
+        val f = File("src/test/kotlin/parser/idl/example.idl")
+        f.useLines {
+            val lines = it.toList().joinToString("\n")
+            //println(lines)
+            val res = pIdlFile().run(State(lines))
+            println(res)
+            val ast = res as Success<IdlFile>
+            if(!ast.state.eof()) throw RuntimeException("not all lines parsed")
+            println(ast.value.packageIdentifier)
+            println(ast.value.imports.joinToString("\n"))
+            println(ast.value.objects.joinToString("\n"))
+        }
 
     }
 }
