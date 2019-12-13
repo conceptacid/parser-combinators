@@ -9,51 +9,59 @@ import parser.core.UnexpectedToken
 
 
 class IdlParsersTest {
-
     @Test
     fun `Identifier Parser`() {
-        assertThat(pIdentifier().run(State("Abcd")))
+        assertThat(pTypeIdentifier().run(State("Abcd")))
                 .isEqualTo(Success(TypeIdentifier("Abcd"), State(input = "Abcd", col = 4, pos = 4)))
 
-        assertThat(pIdentifier().run(State("abcd")))
+        assertThat(pTypeIdentifier().run(State("abcd")))
                 .isEqualTo(Failure(UnexpectedToken(label = "type-identifier", char = 'a', line = 0, col = 0)))
-
     }
 
     @Test
-    fun `Message Field Parser`() {
-        val input = "abc:A = 1;"
-        val output = Field(FieldIdentifier("abc"), TypeIdentifier("A"), 1)
+    fun `Custom Type Field Parser`() {
+        val input = "abc:A, tag = 1;"
+        val output = Field(FieldIdentifier("abc"), FieldType.CustomType(TypeIdentifier("A")), 1)
         assertThat(pField().run(State(input)))
                 .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
     }
 
+    @Test
+    fun `String Type Field Parser`() {
+        val input = "abc:String ,tag= 1;"
+        val output = Field(FieldIdentifier("abc"), FieldType.String, 1)
+        assertThat(pField().run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+    }
 
     @Test
     fun `Message Parser`() {
         val input = """
-            message AbcCommand {
-                line1:A = 1;
-                line2 : B = 2;
-                line3: C= 3;
+            data AbcCommand {
+                line1:A,tag=1;
+                line2 : Int32    , tag= 2;
+                line3: String, tag=   3;
             }""".trimIndent()
 
 
-        val output = Message(TypeIdentifier("AbcCommand"), listOf(
-                Field(FieldIdentifier("line1"), TypeIdentifier("A"), 1),
-                Field(FieldIdentifier("line2"), TypeIdentifier("B"), 2),
-                Field(FieldIdentifier("line3"), TypeIdentifier("C"), 3)
+        val output = Data(TypeIdentifier("AbcCommand"), listOf(
+                Field(FieldIdentifier("line1"), FieldType.CustomType(TypeIdentifier("A")), 1),
+                Field(FieldIdentifier("line2"), FieldType.Int32, 2),
+                Field(FieldIdentifier("line3"), FieldType.String, 3)
         ))
 
-        assertThat(pMessage().run(State(input)))
+        assertThat(pData().run(State(input)))
                 .isEqualTo(Success(output, State(input = input, col = 1, pos = input.length, line = 4)))
 
-        val err1 = """
-            message AbcCommand {
-                line1: A = ;
-            }""".trimIndent()
+        val err1 = "message AbcCommand { line1: A = ;}"
+        assertThat(pData().run(State(err1))).isInstanceOf(Failure::class.java)
 
-        assertThat(pMessage().run(State(err1))).isInstanceOf(Failure::class.java)
+        val err2 = "message Abc Command { line1: A = 1; }"
+        assertThat(pData().run(State(err2))).isInstanceOf(Failure::class.java)
+
+        val err3 = "message AbcCommand { line1 A = 1; }"
+        assertThat(pData().run(State(err3))).isInstanceOf(Failure::class.java)
+
     }
 }
 

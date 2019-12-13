@@ -1,10 +1,14 @@
 package parser.core
 
+import Tuple10
 import Tuple2
 import Tuple3
 import Tuple4
 import Tuple5
 import Tuple6
+import Tuple7
+import Tuple8
+import Tuple9
 import kotlin.NoSuchElementException
 
 data class State(
@@ -269,4 +273,28 @@ fun<A: Any, B: Any, C: Any, D: Any, E: Any> pDelimited(delimiter: Parser<Any>, a
 
 fun<A: Any, B: Any, C: Any, D: Any, E: Any, F: Any> pDelimited(delimiter: Parser<Any>, a: Parser<A>, b: Parser<B>, c: Parser<C>, d: Parser<D>, e: Parser<E>, f: Parser<F>) : Parser<Tuple6<A, B, C, D, E, F>> {
     return (pDelimited(delimiter, a, b, c, d, e) andl delimiter) followedBy f map { Tuple6(it.first.a, it.first.b, it.first.c, it.first.d, it.first.e, it.second) }
+}
+
+fun<A: Any, B: Any, C: Any, D: Any, E: Any, F: Any, G: Any> pDelimited(delimiter: Parser<Any>, a: Parser<A>, b: Parser<B>, c: Parser<C>,
+                                                                       d: Parser<D>, e: Parser<E>, f: Parser<F>, g: Parser<G>) : Parser<Tuple7<A, B, C, D, E, F, G>> {
+    return (pDelimited(delimiter, a, b, c, d, e, f) andl delimiter) followedBy g map { Tuple7(it.first.a, it.first.b, it.first.c, it.first.d, it.first.e, it.first.f, it.second) }
+}
+
+fun<A: Any, B: Any, C: Any, D: Any, E: Any, F: Any, G: Any, H: Any> pDelimited(delimiter: Parser<Any>, a: Parser<A>, b: Parser<B>, c: Parser<C>,
+                                                                               d: Parser<D>, e: Parser<E>, f: Parser<F>, g: Parser<G>, h: Parser<H>) : Parser<Tuple8<A, B, C, D, E, F, G, H>> {
+    return (pDelimited(delimiter, a, b, c, d, e, f, g) andl delimiter) followedBy h map { Tuple8(it.first.a, it.first.b, it.first.c, it.first.d, it.first.e, it.first.f, it.first.g, it.second) }
+}
+
+fun<A: Any, B: Any, C: Any, D: Any, E: Any, F: Any, G: Any, H: Any, I :Any> pDelimited(delimiter: Parser<Any>, a: Parser<A>, b: Parser<B>, c: Parser<C>,
+                                                                                       d: Parser<D>, e: Parser<E>, f: Parser<F>, g: Parser<G>, h: Parser<H>,
+                                                                                       i: Parser<I>) : Parser<Tuple9<A, B, C, D, E, F, G, H, I>> {
+    return (pDelimited(delimiter, a, b, c, d, e, f, g, h) andl delimiter) followedBy i map { Tuple9(it.first.a, it.first.b, it.first.c,
+            it.first.d, it.first.e, it.first.f, it.first.g, it.first.h, it.second) }
+}
+
+fun<A: Any, B: Any, C: Any, D: Any, E: Any, F: Any, G: Any, H: Any, I :Any, J: Any> pDelimited(delimiter: Parser<Any>, a: Parser<A>, b: Parser<B>, c: Parser<C>,
+                                                                                       d: Parser<D>, e: Parser<E>, f: Parser<F>, g: Parser<G>, h: Parser<H>,
+                                                                                       i: Parser<I>, j: Parser<J>) : Parser<Tuple10<A, B, C, D, E, F, G, H, I, J>> {
+    return (pDelimited(delimiter, a, b, c, d, e, f, g, h, i) andl delimiter) followedBy j map { Tuple10(it.first.a, it.first.b, it.first.c,
+            it.first.d, it.first.e, it.first.f, it.first.g, it.first.h, it.first.i, it.second) }
 }
