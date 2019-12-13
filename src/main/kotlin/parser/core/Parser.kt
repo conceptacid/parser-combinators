@@ -127,6 +127,9 @@ class Parser<T : Any>(
             }
         }
 
+    infix fun<U: Any> followedBy(that: Parser<out U>): Parser<Pair<T, U>> =
+            andThen(that) map { it } label "${this.label} followedBy ${that.label}"
+
     infix fun and(that: Parser<out Any>): Parser<List<Any>> =
         andThen(that) map { concat(it.first, it.second) } label "${this.label} and ${that.label}"
 
