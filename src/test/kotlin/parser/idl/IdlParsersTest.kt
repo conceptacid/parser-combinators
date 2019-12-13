@@ -63,6 +63,14 @@ class IdlParsersTest {
     }
 
     @Test
+    fun `One Topic Parser`() {
+        val input = "topic \"abc\", request = Bla, response = Foo"
+        val output = Topic("abc", TypeIdentifier("Bla"), Maybe.just(TypeIdentifier("Foo")))
+        assertThat(pTopic().run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+    }
+
+    @Test
     fun `One Import Parser`() {
         val input = "import bla.fazl"
         val output = Import("bla.fazl")

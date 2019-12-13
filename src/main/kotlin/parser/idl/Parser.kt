@@ -5,7 +5,7 @@ import quotedString
 
 private fun spaces() = zeroOrMore(pWhitespace())
 fun delimiters() = spaces().ignore()
-
+fun <T> List<T>.findDuplicates() = groupBy { it }.mapValues { it.value.size }.filter { it.value > 1 }
 
 fun pIdentifier(): Parser<Identifier> {
     val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_')
@@ -61,7 +61,16 @@ fun pField(): Parser<Field> {
 
 fun pListOfFields(): Parser<List<Field>> {
     return pDelimited(delimiters(), pChar('{'), zeroOrMore(pField() andl delimiters()), pChar('}')) map { (_, fields, _) ->
-        fields.map { it as Field }
+        val res = fields.map { it as Field }
+
+        // TODO: move it to validation step
+        val duplicateFieldIds = res.map { it.id }.findDuplicates()
+        if (duplicateFieldIds.isNotEmpty()) throw RuntimeException("Duplicated field IDs: $duplicateFieldIds")
+        val duplicatedTags = res.map { it.tag }.findDuplicates()
+        if (duplicatedTags.isNotEmpty()) throw RuntimeException("Duplicated tags: $duplicatedTags")
+
+
+        res
     }
 }
 
@@ -91,13 +100,17 @@ fun pChoice(): Parser<Choice> {
     val identifier = pDelimited(delimiters(), pString("choice"), pTypeIdentifier()) map { it.b }
     val body = pChoiceBody()
     return pDelimited(delimiters(), identifier, body) map { (identifier, options) ->
+        // TODO: move it validation
+        val duplicateIDs = options.map { it.id }.findDuplicates()
+        if (duplicateIDs.isNotEmpty()) throw RuntimeException("Duplicated option types: $duplicateIDs")
         Choice(identifier, options)
     }
 }
 
+
 fun pTopic(): Parser<Topic> {
-    val requestIdParser = pDelimited(delimiters(), pChar(','), pString("request"), pTypeIdentifier()) map { it.c }
-    val responseParser = pDelimited(delimiters(), pChar(','), pString("response"), pTypeIdentifier()) map { it.c }
+    val requestIdParser = pDelimited(delimiters(), pChar(','), pString("request"), pChar('='), pTypeIdentifier()) map { it.d }
+    val responseParser = pDelimited(delimiters(), pChar(','), pString("response"), pChar('='), pTypeIdentifier()) map { it.d }
 
     return pDelimited(delimiters(), pString("topic"), quotedString(),
             requestIdParser, optional(responseParser)) map { (_, text, requestType, responseType) ->
@@ -143,7 +156,22 @@ fun pIdlObjects(): Parser<List<IdlObject>> {
 }
 
 fun pIdlFile(): Parser<IdlFile> {
-    return pDelimited(delimiters(), pPackage(), pImports(), pIdlObjects()) map { (packageIdentity, imports, objects) ->
-        IdlFile(packageIdentity, imports.map { it as Import }, objects.map { it as IdlObject })
+    return pDelimited(delimiters(), pPackage(), pImports(), pIdlObjects()) map { (packageIdentity, importsAsAny, objectsAsAny) ->
+        val imports = importsAsAny.map { it as Import }
+        val objects = objectsAsAny.map { it as IdlObject }
+
+        // TODO: move it validation
+        val duplicateTypes = objects
+                .mapNotNull {
+                    when (it) {
+                        is IdlObject.DataObject -> it.data.id
+                        is IdlObject.ChoiceObject -> it.choice.id
+                        is IdlObject.TopicObject -> null
+                    }
+                }
+                .findDuplicates()
+        if (duplicateTypes.isNotEmpty()) throw RuntimeException("Duplicate type definitions: ${duplicateTypes}")
+
+        IdlFile(packageIdentity, imports.map { it as Import }, objects)
     }
 }

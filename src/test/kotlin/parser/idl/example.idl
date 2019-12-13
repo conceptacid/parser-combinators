@@ -41,3 +41,5 @@ choice MaybeAddress {
     }, tag = 1;
     option NoAddress, tag = 2 ;
 }
+
+topic "same://api_1.2/nios/queryProducers", request = ProducerAssignment, response = ProducerIDLeg
