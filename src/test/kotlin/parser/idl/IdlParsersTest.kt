@@ -27,20 +27,23 @@ class IdlParsersTest {
     fun `Message Parser`() {
         val input = """
             message AbcCommand {
-                line1;
-                line2;
-                line3;
+                line1: A = 1;
+                line2: B = 2;
+                line3: C = 3;
             }""".trimIndent()
 
         print(input)
 
         val output = Message(Identifier("AbcCommand"), listOf(
-                Field(FieldId("line1")),
-                Field(FieldId("line2")),
-                Field(FieldId("line3"))
+                Field(FieldId("line1"), Identifier("A"), 1),
+                Field(FieldId("line2"), Identifier("B"), 2),
+                Field(FieldId("line3"), Identifier("C"), 3)
         ))
 
         assertThat(pMessage().run(State(input)))
-                .isEqualTo(Success(output, State(input = input, col = 1, pos = input.length, line = 2)))
+                .isEqualTo(Success(output, State(input = input, col = 1, pos = input.length, line = 4)))
     }
 }
+
+
+// TODO: check uniqueness of field ids and tags

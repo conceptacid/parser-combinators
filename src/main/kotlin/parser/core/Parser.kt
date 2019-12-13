@@ -1,5 +1,10 @@
 package parser.core
 
+import Tuple2
+import Tuple3
+import Tuple4
+import Tuple5
+import Tuple6
 import kotlin.NoSuchElementException
 
 data class State(
@@ -146,6 +151,8 @@ class Parser<T : Any>(
                 is Failure -> that(state)
             }
         } label "${this.label} or ${that.label}"
+
+    fun ignore() : Parser<Any> = map { Unit }
 }
 
 //* Combinators *//
@@ -242,4 +249,24 @@ fun pNumber(): Parser<Double> {
     val optExponent = optional(e and intPart)
 
     return (intPart and optFraction and optExponent) map { it.joinToString("").toDouble() } label "number"
+}
+
+fun<A: Any, B: Any> pDelimited(delimiter: Parser<Any>, a: Parser<A>, b: Parser<B>) : Parser<Tuple2<A, B>> {
+    return (a andl delimiter) followedBy b map { Tuple2(it.first, it.second)}
+}
+
+fun<A: Any, B: Any, C: Any> pDelimited(delimiter: Parser<Any>, a: Parser<A>, b: Parser<B>, c: Parser<C>) : Parser<Tuple3<A, B, C>> {
+    return (pDelimited(delimiter, a, b) andl delimiter) followedBy c map { Tuple3(it.first.a, it.first.b, it.second) }
+}
+
+fun<A: Any, B: Any, C: Any, D: Any> pDelimited(delimiter: Parser<Any>, a: Parser<A>, b: Parser<B>, c: Parser<C>, d: Parser<D>) : Parser<Tuple4<A, B, C, D>> {
+    return (pDelimited(delimiter, a, b, c) andl delimiter) followedBy d map { Tuple4(it.first.a, it.first.b, it.first.c, it.second) }
+}
+
+fun<A: Any, B: Any, C: Any, D: Any, E: Any> pDelimited(delimiter: Parser<Any>, a: Parser<A>, b: Parser<B>, c: Parser<C>, d: Parser<D>, e: Parser<E>) : Parser<Tuple5<A, B, C, D, E>> {
+    return (pDelimited(delimiter, a, b, c, d) andl delimiter) followedBy e map { Tuple5(it.first.a, it.first.b, it.first.c, it.first.d, it.second) }
+}
+
+fun<A: Any, B: Any, C: Any, D: Any, E: Any, F: Any> pDelimited(delimiter: Parser<Any>, a: Parser<A>, b: Parser<B>, c: Parser<C>, d: Parser<D>, e: Parser<E>, f: Parser<F>) : Parser<Tuple6<A, B, C, D, E, F>> {
+    return (pDelimited(delimiter, a, b, c, d, e) andl delimiter) followedBy f map { Tuple6(it.first.a, it.first.b, it.first.c, it.first.d, it.first.e, it.second) }
 }

@@ -6,7 +6,9 @@ data class Identifier(val id: String)
 data class FieldId(val id: String)
 
 data class Field(
-        val id: FieldId
+        val id: FieldId,
+        val typeID: Identifier,
+        val tag: Int
 )
 
 data class Message(
@@ -15,7 +17,11 @@ data class Message(
 )
 
 private fun spaces() = zeroOrMore(pWhitespace())
+private fun delimiters() = spaces().ignore()
 private fun semicolon() = pChar(';') andl spaces()
+private fun colon() = pChar(':') andl spaces()
+private fun equalSign() = pChar('=') andl spaces()
+
 private fun separatedBy(parser: Parser<out Any>, sep: Parser<out Any>): Parser<List<Any>> =
         parser and zeroOrMore(sep andr parser)
 
@@ -33,8 +39,11 @@ fun pIdentifier(): Parser<Identifier> {
     return firstChar and zeroOrMore(otherChar) label "type-identifier" map { Identifier(it.joinToString("")) }
 }
 
+
 fun pField(): Parser<Field> {
-    return spaces() andr pFieldId() andl (spaces() andr semicolon()) map { Field(it) }
+    return pDelimited(delimiters(), pFieldId(), pChar(':'), pIdentifier(), pChar('='), pInt(), pChar(';')) map { (fieldId, _, typeId, _, tag, _) ->
+        Field(fieldId, typeId, tag)
+    } label "field-definition"
 }
 
 fun pMessage(): Parser<Message> {
@@ -43,13 +52,14 @@ fun pMessage(): Parser<Message> {
     val left = pChar('{') andl spaces()
     val right = spaces() andr pChar('}')
 
-    val fields = zeroOrMore(pField())
+    val fields = zeroOrMore(pField() andl delimiters())
 
-    val body = pBetween(left, fields, right)
-    val header = (keyword andl spaces()) andr (pIdentifier()) andl spaces()
-    return (header followedBy body) label "message-definition" map { (identifier, body) ->
-        Message(identifier, body.map {
-            it as Field
-        })
+    val header = pDelimited(delimiters(), pString("message"), pIdentifier())
+    val body = pDelimited(delimiters(), pChar('{'), fields, pChar('}'))
+
+    return pDelimited(delimiters(), header, body) label "message-definition" map { (header, body) ->
+        val (_, id) = header
+        val (_, fields, _) = body
+        Message(id, fields.map { it as Field })
     }
 }
