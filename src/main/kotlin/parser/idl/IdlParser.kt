@@ -2,17 +2,17 @@ package parser.idl
 
 import parser.core.*
 
-data class Identifier(val id: String)
-data class FieldId(val id: String)
+data class TypeIdentifier(val id: String)
+data class FieldIdentifier(val id: String)
 
 data class Field(
-        val id: FieldId,
-        val typeID: Identifier,
+        val id: FieldIdentifier,
+        val typeID: TypeIdentifier,
         val tag: Int
 )
 
 data class Message(
-        val id: Identifier,
+        val id: TypeIdentifier,
         val fields: List<Field>
 )
 
@@ -26,19 +26,18 @@ private fun separatedBy(parser: Parser<out Any>, sep: Parser<out Any>): Parser<L
         parser and zeroOrMore(sep andr parser)
 
 
-fun pFieldId(): Parser<FieldId> {
+fun pFieldId(): Parser<FieldIdentifier> {
     val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_')
     val firstChar = pAnyOf(alpha)
     val otherChar = pAnyOf(alpha + ('0'..'9').toList())
-    return firstChar and zeroOrMore(otherChar) label "field-identifier" map { FieldId(it.joinToString("")) }
+    return firstChar and zeroOrMore(otherChar) label "field-identifier" map { FieldIdentifier(it.joinToString("")) }
 }
 
-fun pIdentifier(): Parser<Identifier> {
+fun pIdentifier(): Parser<TypeIdentifier> {
     val firstChar = pAnyOf(('A'..'Z').toList())
     val otherChar = pAnyOf(('0'..'9').toList() + ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_'))
-    return firstChar and zeroOrMore(otherChar) label "type-identifier" map { Identifier(it.joinToString("")) }
+    return firstChar and zeroOrMore(otherChar) label "type-identifier" map { TypeIdentifier(it.joinToString("")) }
 }
-
 
 fun pField(): Parser<Field> {
     return pDelimited(delimiters(), pFieldId(), pChar(':'), pIdentifier(), pChar('='), pInt(), pChar(';')) map { (fieldId, _, typeId, _, tag, _) ->
@@ -47,16 +46,8 @@ fun pField(): Parser<Field> {
 }
 
 fun pMessage(): Parser<Message> {
-    val keyword = pString("message") label "message"
-
-    val left = pChar('{') andl spaces()
-    val right = spaces() andr pChar('}')
-
-    val fields = zeroOrMore(pField() andl delimiters())
-
     val header = pDelimited(delimiters(), pString("message"), pIdentifier())
-    val body = pDelimited(delimiters(), pChar('{'), fields, pChar('}'))
-
+    val body = pDelimited(delimiters(), pChar('{'), zeroOrMore(pField() andl delimiters()), pChar('}'))
     return pDelimited(delimiters(), header, body) label "message-definition" map { (header, body) ->
         val (_, id) = header
         val (_, fields, _) = body
