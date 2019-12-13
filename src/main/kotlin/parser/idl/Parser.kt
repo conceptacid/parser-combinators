@@ -7,7 +7,6 @@ private fun spaces() = zeroOrMore(pWhitespace())
 fun delimiters() = spaces().ignore()
 
 
-
 fun pIdentifier(): Parser<Identifier> {
     val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_')
     val firstChar = pAnyOf(alpha)
@@ -110,23 +109,27 @@ fun separatedBy(parser: Parser<out Any>, sep: Parser<out Any>): Parser<List<Any>
         parser and zeroOrMore(sep andr parser)
 
 fun pPackage(): Parser<Package> {
-    return separatedBy(pIdentifier(), pChar('.')) map { Package(it.map { it as Identifier }) }
+    val packagePath = separatedBy(pIdentifier(), pChar('.')) map { Package(it.map { it as Identifier }) }
+    return optional(delimiters()) andr pString("package") andr delimiters() andr packagePath andl optional(delimiters())// andl pChar(';')
 }
 
-fun pPackageId(): Parser<String> {
-    val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_')
-    val firstChar = pAnyOf(alpha)
-    val otherChar = pAnyOf(alpha + ('0'..'9').toList() + listOf('.'))
-    return firstChar and zeroOrMore(otherChar) label "packate-identifier" map { it.joinToString("") }
-
-}
+//fun pPackageId(): Parser<String> {
+//    val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_')
+//    val firstChar = pAnyOf(alpha)
+//    val otherChar = pAnyOf(alpha + ('0'..'9').toList() + listOf('.'))
+//    return firstChar and zeroOrMore(otherChar) label "packate-identifier" map { it.joinToString("") }
+//
+//}
 
 fun pImport(): Parser<Import> {
     val importPath = separatedBy(pIdentifier(), pChar('.')) map {
         it.map { it as Identifier }.map { it.id }.joinToString(".")
     }
-    val p = pPackageId()
-    return pDelimited(delimiters(), pString("import"), p) map { Import(it.b) }
+    return pDelimited(delimiters(), pString("import"), importPath) map { Import(it.b) }
+}
+
+fun pImports(): Parser<List<Import>> {
+    return zeroOrMore(optional(delimiters()) andr pImport() andl optional(delimiters())) map { it.map { it as Import } }
 }
 
 fun pIdlObject(): Parser<IdlObject> {
@@ -135,10 +138,12 @@ fun pIdlObject(): Parser<IdlObject> {
             (pTopic() andl delimiters() map { IdlObject.TopicObject(it) as IdlObject })
 }
 
+fun pIdlObjects(): Parser<List<IdlObject>> {
+    return zeroOrMore(optional(delimiters()) andr pIdlObject() andl optional(delimiters())) map { it.map { it as IdlObject } }
+}
+
 fun pIdlFile(): Parser<IdlFile> {
-    return pDelimited(delimiters(), pPackage(),
-            zeroOrMore(pImport() andl delimiters()),
-            zeroOrMore(pIdlObject())) map { (packageIdentity, imports, objects) ->
+    return pDelimited(delimiters(), pPackage(), pImports(), pIdlObjects()) map { (packageIdentity, imports, objects) ->
         IdlFile(packageIdentity, imports.map { it as Import }, objects.map { it as IdlObject })
     }
 }

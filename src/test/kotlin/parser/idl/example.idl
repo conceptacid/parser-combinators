@@ -1,3 +1,43 @@
+
 package net.riedel.same.api
+
+
+
 import net.bla.fazl
+
 import org.world.corporation
+import gui.guetxli.cyclocross
+
+data UserID {
+    id: String, tag = 1;
+}
+
+data Address {
+    street: String, tag = 1;
+    house: Int16, tag = 2;
+
+    city: String, tag = 3;
+}
+
+data ProducerIDLeg {
+    producerID: String, tag = 1;
+    leg: Int15, tag = 2;
+}
+
+
+choice ProducerAssignment {
+    option Silence, tag = 1;
+    option Signal {
+        producerIDLeg: ProducerIDLeg, tag = 1;
+    }
+
+    , tag =  2
+    ;
+}
+
+choice MaybeAddress {
+    option Specified {
+        address: Address, tag = 1;
+    }, tag = 1;
+    option NoAddress, tag = 2 ;
+}

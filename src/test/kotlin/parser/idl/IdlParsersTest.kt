@@ -73,16 +73,18 @@ class IdlParsersTest {
     @Test
     fun `Many Imports Parser`() {
         val input = """
-                import bla.fazl
-                import upf.murgl"""
+            import bla.fazl;
+            import upf.murgl;
+        """.trimMargin()
 
         val output = listOf(
                 Import("bla.fazl"),
                 Import("upf.murgl"))
 
-        val p = zeroOrMore(pImport() andl delimiters())
+        val p = zeroOrMore(optional(delimiters()) andr pImport() andl optional(delimiters()) andl pChar(';') andl optional(delimiters()))
+        //val p = separatedBy(pChar(';'), pImport())
         assertThat(p.run(State(input)))
-                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+                .isEqualTo(Success(output, State(input = input, col = 29, pos = input.length, line = 1)))
     }
 
     @Test
@@ -95,9 +97,10 @@ class IdlParsersTest {
             val lines = it.toList().joinToString("\n")
             //println(lines)
             val res = pIdlFile().run(State(lines))
-            println(res)
+            //println(res)
             val ast = res as Success<IdlFile>
             if(!ast.state.eof()) throw RuntimeException("not all lines parsed")
+            println("\nPARSED:")
             println(ast.value.packageIdentifier)
             println(ast.value.imports.joinToString("\n"))
             println(ast.value.objects.joinToString("\n"))
