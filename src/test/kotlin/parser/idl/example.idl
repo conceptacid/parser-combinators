@@ -48,5 +48,4 @@ data DifferentTypes  {
     map2: List<Map<String, Boolean>>, tag = 3;
 }
 
-// hello
 topic "same://api_1.2/nios/queryProducers", request = ProducerAssignment, response = ProducerIDLeg
