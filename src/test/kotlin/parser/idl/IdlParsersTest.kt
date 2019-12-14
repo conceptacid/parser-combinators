@@ -57,6 +57,22 @@ class IdlParsersTest {
     }
 
     @Test
+    fun `Comment Parser`() {
+        val input = "// blafazls\n"
+        val output = "blafazls"
+        assertThat(pComment().run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 1)))
+    }
+
+    @Test
+    fun `Delimeter Parser`() {
+        val input = "// blafazls\n"
+        val output = Unit
+        assertThat(delimiters().run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 1)))
+    }
+
+    @Test
     fun `List level 3 Field Type Parser`() {
         val input = "List<List<List<Boolean>>>"
         val output = FieldType.List(FieldType.List(FieldType.List(FieldType.Boolean)))
@@ -110,6 +126,15 @@ class IdlParsersTest {
                 .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
     }
 
+
+    @Test
+    fun `Commented construct Parser`() {
+        val input = "//topic \"hello\", request = A, response = B\ntopic \"a\", request=C\n"
+        val output = Topic("a", TypeIdentifier("C"), Maybe.none())
+        assertThat(pConstruct().run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+    }
+
     @Test
     fun `Many Imports Parser`() {
         val input = """
@@ -139,7 +164,10 @@ class IdlParsersTest {
             val res = pFile().run(State(lines))
             //println(res)
             val ast = res as Success<parser.idl.File>
-            if(!ast.state.eof()) throw RuntimeException("not all lines parsed")
+            if(!ast.state.eof()) {
+                println("remaining input: $res")
+                throw RuntimeException("not all lines parsed")
+            }
             println("\nPARSED:")
             println(ast.value.packageIdentifier)
             println(ast.value.imports.joinToString("\n"))

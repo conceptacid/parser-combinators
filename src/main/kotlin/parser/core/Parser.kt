@@ -244,6 +244,12 @@ fun pWhitespace() = oneOrMore(pWhitespaceChar()) label "whitespace"
 
 fun pDigits(): Parser<List<Any>> = oneOrMore(pDigit()) label "digits"
 
+fun pAllUntilNewline(): Parser<String> = zeroOrMore(satisfy("comment") { it != '\n'}) map {
+    it.map {it as Char}.joinToString("")
+}
+
+
+
 //** Primitive Type Parsers **//
 
 fun pString(string: String): Parser<String> =

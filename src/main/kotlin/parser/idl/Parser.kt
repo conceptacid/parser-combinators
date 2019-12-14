@@ -3,9 +3,13 @@ package parser.idl
 import parser.core.*
 import quotedString
 
+fun pComment(): Parser<String> = pString("//") andr pAllUntilNewline() andl pChar('\n')
+
 private fun spaces() = zeroOrMore(pWhitespace())
-fun delimiters() = spaces().ignore()
+fun delimiters() = (spaces().ignore() or pComment().ignore())
 fun <T> List<T>.findDuplicates() = groupBy { it }.mapValues { it.value.size }.filter { it.value > 1 }
+
+
 
 fun pIdentifier(): Parser<Identifier> {
     val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_')
@@ -46,7 +50,6 @@ fun pMap(level: Int) : Parser<FieldType> {
         return pDelimited(delimiters(), pString("Map<"), pKeyValuePair(level), pString(">")) map { FieldType.Map(it.b.first, it.b.second) }
     }
     else {
-        throw RuntimeException("too many nested type specifier")  // doesn't specify the position, TODO
         fail("too many nested type specifiers")
     }
 }
@@ -170,9 +173,9 @@ fun pImports(): Parser<List<Import>> {
 }
 
 fun pConstruct(): Parser<Construct> {
-    return (pData() andl delimiters() map { Construct.DataObject(it) as Construct }) or
+    return delimiters() andr (pData() andl delimiters() map { Construct.DataObject(it) as Construct }) or
             (pChoice() andl delimiters() map { Construct.ChoiceObject(it) as Construct }) or
-            (pTopic() andl delimiters() map { Construct.TopicObject(it) as Construct })
+            (pTopic() andl delimiters() map { Construct.TopicObject(it) as Construct }) andl delimiters()
 }
 
 fun pConstructs(): Parser<List<Construct>> {
