@@ -17,42 +17,67 @@ fun pIdentifier(): Parser<Identifier> {
 fun pTypeIdentifier(): Parser<TypeIdentifier> {
     val firstChar = pAnyOf(('A'..'Z').toList())
     val otherChar = pAnyOf(('0'..'9').toList() + ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_'))
-    return firstChar and zeroOrMore(otherChar) label "type-identifier" map { TypeIdentifier(it.joinToString("")) }
+    return firstChar and zeroOrMore(otherChar) label "type-identifier" map {
+        TypeIdentifier(it.joinToString(""))
+    }
 }
 
 fun pTag(): Parser<Int> {
     return pDelimited(delimiters(), pString("tag"), pChar('='), pInt()) map { it.c }
 }
 
-fun pKeyValuePair(): Parser<Pair<FieldType, FieldType>> {
-    return pDelimited(delimiters(), pFieldType(), pChar(','), pFieldType()) map { it.a to it.c }
-}
-/*
-fun pMap() : Parser<FieldType> {
-    return pDelimited(delimiters(), pString("Map<"), pKeyValuePair(), pString(">")) map { FieldType.Map(it.b.first, it.b.second)}
-}
-
-fun pList() : Parser<FieldType> {
-    return pDelimited(delimiters(), pString("List<"), pFieldType(), pString(">")) map { FieldType.List(it.b)}
-}
-*/
-
-fun pFieldType(): Parser<FieldType> {
-    return pString("Int8") map { FieldType.Int8 as FieldType } or
+fun pMapKeyType():  Parser<FieldType> {
+    return (pString("Int8") map { FieldType.Int8 as FieldType }) or
             (pString("Int16") map { FieldType.Int16 as FieldType }) or
             (pString("Int32") map { FieldType.Int32 as FieldType }) or
             (pString("String") map { FieldType.String as FieldType }) or
             (pString("Boolean") map { FieldType.Boolean as FieldType }) or
             (pString("Float") map { FieldType.Float as FieldType }) or
-            (pTypeIdentifier() map { FieldType.CustomType(it) as FieldType })
-    //pMap() or
-    //pList()
+            (pString("GUID") map { FieldType.GUID as FieldType }) or
+            (pString("DateTime") map { FieldType.DateTime as FieldType })
+}
 
-    // TODO: add GUID, DateTime
+fun pKeyValuePair(level: Int): Parser<Pair<FieldType, FieldType>> {
+    return pDelimited(delimiters(), pMapKeyType(), pChar(','), pFieldType(level+1)) map { it.a to it.c }
+}
+
+fun pMap(level: Int) : Parser<FieldType> {
+    return  if(level < 2) {
+        return pDelimited(delimiters(), pString("Map<"), pKeyValuePair(level), pString(">")) map { FieldType.Map(it.b.first, it.b.second) }
+    }
+    else {
+        throw RuntimeException("too many nested type specifier")  // doesn't specify the position, TODO
+        fail("too many nested type specifiers")
+    }
+}
+
+
+fun pList(level: Int) : Parser<FieldType> {
+    return  if(level < 2) {
+        pDelimited(delimiters(), pString("List<"), pFieldType(level +1), pString(">")) map { FieldType.List(it.b) }
+    }
+    else {
+        fail("too many nested type specifiers")
+    }
+}
+
+
+fun pFieldType(level: Int): Parser<FieldType> {
+    return (pString("Int8") map { FieldType.Int8 as FieldType }) or
+            (pString("Int16") map { FieldType.Int16 as FieldType }) or
+            (pString("Int32") map { FieldType.Int32 as FieldType }) or
+            (pString("String") map { FieldType.String as FieldType }) or
+            (pString("Boolean") map { FieldType.Boolean as FieldType }) or
+            (pString("Float") map { FieldType.Float as FieldType }) or
+            (pString("GUID") map { FieldType.GUID as FieldType }) or
+            (pString("DateTime") map { FieldType.DateTime as FieldType }) or
+            pList(level) or
+            pMap(level) or
+            (pTypeIdentifier() map { FieldType.CustomType(it) as FieldType })
 }
 
 fun pField(): Parser<Field> {
-    return pDelimited(delimiters(), pIdentifier(), pChar(':'), pFieldType(),
+    return pDelimited(delimiters(), pIdentifier(), pChar(':'), pFieldType(0),
             pChar(','), pTag(),
             pChar(';')) map { (fieldId, _, fieldType, _, tag, _) ->
         Field(fieldId, fieldType, tag)
@@ -68,7 +93,6 @@ fun pListOfFields(): Parser<List<Field>> {
         if (duplicateFieldIds.isNotEmpty()) throw RuntimeException("Duplicated field IDs: $duplicateFieldIds")
         val duplicatedTags = res.map { it.tag }.findDuplicates()
         if (duplicatedTags.isNotEmpty()) throw RuntimeException("Duplicated tags: $duplicatedTags")
-
 
         res
     }
@@ -145,33 +169,31 @@ fun pImports(): Parser<List<Import>> {
     return zeroOrMore(optional(delimiters()) andr pImport() andl optional(delimiters())) map { it.map { it as Import } }
 }
 
-fun pIdlObject(): Parser<IdlObject> {
-    return (pData() andl delimiters() map { IdlObject.DataObject(it) as IdlObject }) or
-            (pChoice() andl delimiters() map { IdlObject.ChoiceObject(it) as IdlObject }) or
-            (pTopic() andl delimiters() map { IdlObject.TopicObject(it) as IdlObject })
+fun pConstruct(): Parser<Construct> {
+    return (pData() andl delimiters() map { Construct.DataObject(it) as Construct }) or
+            (pChoice() andl delimiters() map { Construct.ChoiceObject(it) as Construct }) or
+            (pTopic() andl delimiters() map { Construct.TopicObject(it) as Construct })
 }
 
-fun pIdlObjects(): Parser<List<IdlObject>> {
-    return zeroOrMore(optional(delimiters()) andr pIdlObject() andl optional(delimiters())) map { it.map { it as IdlObject } }
+fun pConstructs(): Parser<List<Construct>> {
+    return zeroOrMore(optional(delimiters()) andr pConstruct() andl optional(delimiters())) map { it.map { it as Construct } }
 }
 
-fun pIdlFile(): Parser<IdlFile> {
-    return pDelimited(delimiters(), pPackage(), pImports(), pIdlObjects()) map { (packageIdentity, importsAsAny, objectsAsAny) ->
-        val imports = importsAsAny.map { it as Import }
-        val objects = objectsAsAny.map { it as IdlObject }
+fun pFile(): Parser<File> {
+    return pDelimited(delimiters(), pPackage(), pImports(), pConstructs()) map { (packageIdentity, imports, objects) ->
 
         // TODO: move it validation
         val duplicateTypes = objects
                 .mapNotNull {
                     when (it) {
-                        is IdlObject.DataObject -> it.data.id
-                        is IdlObject.ChoiceObject -> it.choice.id
-                        is IdlObject.TopicObject -> null
+                        is Construct.DataObject -> it.data.id
+                        is Construct.ChoiceObject -> it.choice.id
+                        is Construct.TopicObject -> null
                     }
                 }
                 .findDuplicates()
         if (duplicateTypes.isNotEmpty()) throw RuntimeException("Duplicate type definitions: ${duplicateTypes}")
 
-        IdlFile(packageIdentity, imports.map { it as Import }, objects)
+        File(packageIdentity, imports, objects)
     }
 }

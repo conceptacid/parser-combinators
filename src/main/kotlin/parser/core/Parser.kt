@@ -64,6 +64,21 @@ data class NoMoreInput(
         """Error parsing ${label ?: "unknown"}. No more input"""
 }
 
+data class SyntaxError(
+        override val label: String? = null,
+        val line: Int,
+        val col: Int
+) : ParserError() {
+
+    override fun relabel(label: String?) = this.copy(label = label)
+
+    override fun toString() =
+            """Error parsing ${label ?: "unknown"}. Syntax error at Line $line, Column $col"""
+}
+
+
+
+
 sealed class Maybe<T : Any> {
     companion object {
         fun <T : Any> just(value: T): Maybe<T> = Just(value)
@@ -160,6 +175,7 @@ class Parser<T : Any>(
 }
 
 //* Combinators *//
+fun< T: Any> fail(label: String): Parser<T> = Parser { state -> Failure(SyntaxError(label, state.line, state.col)) }
 
 fun satisfy(label: String, predicate: (Char) -> Boolean): Parser<Char> =
     Parser { state ->

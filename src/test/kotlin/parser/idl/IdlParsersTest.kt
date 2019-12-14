@@ -17,7 +17,7 @@ class IdlParsersTest {
     }
 
     @Test
-    fun `Custom Type Field Parser`() {
+    fun `Custom Field Parser`() {
         val input = "abc:A, tag = 1;"
         val output = Field(Identifier("abc"), FieldType.CustomType(TypeIdentifier("A")), 1)
         assertThat(pField().run(State(input)))
@@ -25,10 +25,42 @@ class IdlParsersTest {
     }
 
     @Test
-    fun `String Type Field Parser`() {
+    fun `String Field Parser`() {
         val input = "abc:String ,tag= 1;"
         val output = Field(Identifier("abc"), FieldType.String, 1)
         assertThat(pField().run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+    }
+
+    @Test
+    fun `String Field Type Parser`() {
+        val input = "String"
+        val output = FieldType.String
+        assertThat(pFieldType(0).run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+    }
+
+    @Test
+    fun `List level 1 Field Type Parser`() {
+        val input = "List<String>"
+        val output = FieldType.List(FieldType.String)
+        assertThat(pFieldType(0).run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+    }
+
+    @Test
+    fun `List level 2 Field Type Parser`() {
+        val input = "List<List<Boolean>>"
+        val output = FieldType.List(FieldType.List(FieldType.Boolean))
+        assertThat(pFieldType(0).run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+    }
+
+    @Test
+    fun `List level 3 Field Type Parser`() {
+        val input = "List<List<List<Boolean>>>"
+        val output = FieldType.List(FieldType.List(FieldType.List(FieldType.Boolean)))
+        assertThat(pFieldType(0).run(State(input)))
                 .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
     }
 
@@ -104,9 +136,9 @@ class IdlParsersTest {
         f.useLines {
             val lines = it.toList().joinToString("\n")
             //println(lines)
-            val res = pIdlFile().run(State(lines))
+            val res = pFile().run(State(lines))
             //println(res)
-            val ast = res as Success<IdlFile>
+            val ast = res as Success<parser.idl.File>
             if(!ast.state.eof()) throw RuntimeException("not all lines parsed")
             println("\nPARSED:")
             println(ast.value.packageIdentifier)

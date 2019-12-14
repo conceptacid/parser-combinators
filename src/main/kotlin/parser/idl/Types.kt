@@ -46,8 +46,10 @@ sealed class FieldType {
     object String : FieldType()
     object Boolean : FieldType()
     object Float : FieldType()
-    //data class Map(val keyType: FieldType, val valType: FieldType) : FieldType()
-    //data class List(val valType: FieldType) : FieldType()
+    object GUID : FieldType()
+    object DateTime : FieldType()
+    data class Map(val keyType: FieldType, val valType: FieldType) : FieldType()
+    data class List(val valType: FieldType) : FieldType()
     data class CustomType(val id: TypeIdentifier) : FieldType()
 }
 
@@ -87,14 +89,14 @@ data class Import(
         val text: String
 )
 
-sealed class IdlObject {
-    data class DataObject(val data: Data): IdlObject()
-    data class ChoiceObject(val choice: Choice): IdlObject()
-    data class TopicObject(val topic: Topic): IdlObject()
+sealed class Construct {
+    data class DataObject(val data: Data): Construct()
+    data class ChoiceObject(val choice: Choice): Construct()
+    data class TopicObject(val topic: Topic): Construct()
 }
 
-data class IdlFile(
+data class File(
         val packageIdentifier: Package,
         val imports: List<Import>,
-        val objects: List<IdlObject>
+        val objects: List<Construct>
 )
