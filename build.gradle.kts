@@ -1,5 +1,6 @@
 
 import org.gradle.kotlin.dsl.kotlin
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 ///////////////////// Build Script top level ////////////////////////////////////////
 buildscript {
@@ -26,7 +27,7 @@ plugins {
     kotlin("jvm") version "1.3.20"
     idea
     application
-    id("com.github.johnrengelman.shadow") version "2.0.0"
+    id("com.github.johnrengelman.shadow") version "4.0.4"
     id("org.jetbrains.gradle.plugin.idea-ext") version "0.5"
 }
 
@@ -58,5 +59,33 @@ configure<JavaPluginConvention> {
 }
 
 application {
-    mainClassName = "net.conceptacid.idl.MainKt"
+    mainClassName = "idl.MainKt"
+}
+
+///////////////////// Kotlin compile options /////////////////////////////////////////
+tasks {
+    compileKotlin {
+        kotlinOptions.jvmTarget = sourceCompatibility
+    }
+
+    compileTestKotlin {
+        kotlinOptions.jvmTarget = sourceCompatibility
+    }
+}
+
+
+tasks {
+    named<ShadowJar>("shadowJar") {
+        archiveBaseName.set("idl")
+        mergeServiceFiles()
+        manifest {
+            attributes(mapOf("Main-Class" to "idl.MainKt"))
+        }
+    }
+}
+
+tasks {
+    build {
+        dependsOn(shadowJar)
+    }
 }

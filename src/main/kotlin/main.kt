@@ -1,5 +1,5 @@
 package idl
 
 fun main(args: Array<String>) {
-    println("Main!!")
+    println("Main!! ${args.toString()}")
 }
