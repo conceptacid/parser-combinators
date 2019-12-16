@@ -79,7 +79,7 @@ data class SyntaxError(
 
 
 
-sealed class Maybe<T : Any> {
+sealed class Maybe<out T : Any> {
     companion object {
         fun <T : Any> just(value: T): Maybe<T> = Just(value)
 

@@ -10,7 +10,6 @@ fun delimiters() = (spaces().ignore() or pComment().ignore())
 fun <T> List<T>.findDuplicates() = groupBy { it }.mapValues { it.value.size }.filter { it.value > 1 }
 
 
-
 fun pIdentifier(): Parser<Identifier> {
     val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_')
     val firstChar = pAnyOf(alpha)
@@ -30,7 +29,7 @@ fun pTag(): Parser<Int> {
     return pDelimited(delimiters(), pString("tag"), pChar('='), pInt()) map { it.c }
 }
 
-fun pMapKeyType():  Parser<FieldType> {
+fun pMapKeyType(): Parser<FieldType> {
     return (pString("Int8") map { FieldType.Int8 as FieldType }) or
             (pString("Int16") map { FieldType.Int16 as FieldType }) or
             (pString("Int32") map { FieldType.Int32 as FieldType }) or
@@ -42,24 +41,22 @@ fun pMapKeyType():  Parser<FieldType> {
 }
 
 fun pKeyValuePair(level: Int): Parser<Pair<FieldType, FieldType>> {
-    return pDelimited(delimiters(), pMapKeyType(), pChar(','), pFieldType(level+1)) map { it.a to it.c }
+    return pDelimited(delimiters(), pMapKeyType(), pChar(','), pFieldType(level + 1)) map { it.a to it.c }
 }
 
-fun pMap(level: Int) : Parser<FieldType> {
-    return  if(level < 2) {
+fun pMap(level: Int): Parser<FieldType> {
+    return if (level < 2) {
         return pDelimited(delimiters(), pString("Map<"), pKeyValuePair(level), pString(">")) map { FieldType.Map(it.b.first, it.b.second) }
-    }
-    else {
+    } else {
         fail("too many nested type specifiers")
     }
 }
 
 
-fun pList(level: Int) : Parser<FieldType> {
-    return  if(level < 2) {
-        pDelimited(delimiters(), pString("List<"), pFieldType(level +1), pString(">")) map { FieldType.List(it.b) }
-    }
-    else {
+fun pList(level: Int): Parser<FieldType> {
+    return if (level < 2) {
+        pDelimited(delimiters(), pString("List<"), pFieldType(level + 1), pString(">")) map { FieldType.List(it.b) }
+    } else {
         fail("too many nested type specifiers")
     }
 }
@@ -149,15 +146,17 @@ fun separatedBy(parser: Parser<out Any>, sep: Parser<out Any>): Parser<List<Any>
         parser and zeroOrMore(sep andr parser)
 
 fun pPackage(): Parser<Package> {
-    val packagePath = separatedBy(pIdentifier(), pChar('.')) map { Package(it.map { it as Identifier }) }
-    return optional(delimiters()) andr pString("package") andr delimiters() andr packagePath andl optional(delimiters())// andl pChar(';')
+    val packagePath = separatedBy(pIdentifier(), pChar('.')) map {
+        it.map { it as Identifier }.map { it.id }.joinToString(".")
+    }
+    return optional(delimiters()) andr pString("package") andr delimiters() andr packagePath andl optional(delimiters()) map { Package(it) }
 }
 
 //fun pPackageId(): Parser<String> {
 //    val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_')
 //    val firstChar = pAnyOf(alpha)
 //    val otherChar = pAnyOf(alpha + ('0'..'9').toList() + listOf('.'))
-//    return firstChar and zeroOrMore(otherChar) label "packate-identifier" map { it.joinToString("") }
+//    return firstChar and zeroOrMore(otherChar) label "package-identifier" map { it.joinToString("") }
 //
 //}
 

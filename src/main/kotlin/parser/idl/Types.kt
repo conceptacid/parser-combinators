@@ -82,7 +82,7 @@ data class Topic(
 )
 
 data class Package(
-        val path: List<Identifier>
+        val text: String
 )
 
 data class Import(
