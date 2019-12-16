@@ -1,5 +1,9 @@
 package scanner
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
+import arrow.syntax.function.pipe
 import idl.FileItem
 import idl.ParseResult
 import idl.SingleFileParseResult
@@ -44,3 +48,9 @@ fun parseIdlFiles(directory: String): ParseResult = findAllFilesRecursive(direct
             else ParseResult.Success(it.second)
         }
 
+suspend fun parseIdlFilesIO(directory: String): Either<List<SingleFileParseResult.Failure>, List<FileItem>> = parseIdlFiles(directory).pipe {
+    when (it) {
+        is ParseResult.Success -> it.files.right()
+        is ParseResult.ParsingError -> it.files.left()
+    }
+}

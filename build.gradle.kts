@@ -2,10 +2,11 @@
 import org.gradle.kotlin.dsl.kotlin
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
+
+
 ///////////////////// Build Script top level ////////////////////////////////////////
 buildscript {
     val kotlin_version by extra("1.3.50")
-    val arrow_version by extra("0.9.0")
     val kollection_version by extra ("0.7")
 
     repositories {
@@ -28,7 +29,7 @@ plugins {
     idea
     application
     id("com.github.johnrengelman.shadow") version "4.0.4"
-    id("org.jetbrains.gradle.plugin.idea-ext") version "0.5"
+    id("org.jetbrains.gradle.plugin.idea-ext") version "0.6.1"
 }
 
 group = "net.conceptacid"
@@ -46,10 +47,31 @@ repositories {
 
 
 dependencies {
+
+    val arrow_version = "0.9.0"   //by extra("0.9.0")
+
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     testImplementation("junit:junit:4.12")
     testImplementation("org.assertj:assertj-core:3.11.1")
+
+
+    ///////////////////// Kotlin Arrow ///////////////////////////////////////////////////////////
+    compile("io.arrow-kt:arrow-core-data:${arrow_version}")
+    compile("io.arrow-kt:arrow-core-extensions:${arrow_version}")
+    compile("io.arrow-kt:arrow-syntax:${arrow_version}")
+    compile("io.arrow-kt:arrow-typeclasses:${arrow_version}")
+    compile("io.arrow-kt:arrow-extras-data:${arrow_version}")
+    compile("io.arrow-kt:arrow-extras-extensions:${arrow_version}")
+    //kapt("io.arrow-kt:arrow-meta:${arrow_version}")
+
+    compile("io.arrow-kt:arrow-query-language:${arrow_version}")
+    compile("io.arrow-kt:arrow-effects-data:${arrow_version}")
+    compile("io.arrow-kt:arrow-effects-extensions:${arrow_version}")
+    compile("io.arrow-kt:arrow-effects-io-extensions:${arrow_version}")
+    compile("io.arrow-kt:arrow-optics:${arrow_version}")
+    compile("io.arrow-kt:arrow-query-language:${arrow_version}")
+
 }
 
 ////////////////// Additional settings /////////////////////////////////////////////
