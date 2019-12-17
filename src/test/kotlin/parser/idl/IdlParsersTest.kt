@@ -118,12 +118,36 @@ class IdlParsersTest {
                 .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
     }
 
+
+
+
     @Test
     fun `One Import Parser`() {
         val input = "import bla.fazl"
         val output = Import("bla.fazl")
         assertThat(pImport().run(State(input)))
                 .isEqualTo(Success(output, State(input = input, col = input.length, pos = input.length, line = 0)))
+    }
+
+
+    @Test
+    fun `enum construct Parser`() {
+        val input = """
+            enum Direction {
+                Up = 0;
+                Down = 1;
+                Left = 2;
+                Right = 3;
+            }
+        """.trimIndent()
+        val output = Construct.Enumeration(Enumeration(TypeIdentifier("Direction"), listOf(
+                EnumerationItem("Up", 0),
+                EnumerationItem("Down", 1),
+                EnumerationItem("Left", 2),
+                EnumerationItem("Right", 3)
+        )))
+        assertThat(pConstruct().run(State(input)))
+                .isEqualTo(Success(output, State(input = input, col = 1, pos = input.length, line = 5)))
     }
 
 

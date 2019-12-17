@@ -36,7 +36,7 @@ fun pGenerationTarget(): Parser<Pair<GeneratorFn, String>> =
                 (pString("typescript") map { ::generateTypescriptFile as GeneratorFn to "ts" })
 
 fun pPath(): Parser<String> {
-    val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_', '~', '/', '-')
+    val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + ('0'..'9').toList() + listOf('_', '~', '/', '-')
     val pathChar = pAnyOf(alpha)
     return oneOrMore(pathChar) map { it.joinToString("") }
 }
@@ -46,9 +46,9 @@ fun spaces(): Parser<out Any> = zeroOrMore(pChar(' '))
 fun pInputPath(): Parser<Arg> = spaces() andr pString("-i") andr spaces() andr pPath() map { Arg.InputPath(it) }
 fun pOutputPath(): Parser<Arg> = spaces() andr pString("-o") andr spaces() andr pPath() map { Arg.OutputPath(it) }
 
-fun pArg(): Parser<Arg> = pInputPath() or pOutputPath()
+fun pKeyValueArgument(): Parser<Arg> = pInputPath() or pOutputPath()
 
-fun pArgs(): Parser<Args> = pDelimited(spaces(), pGenerationTarget(), oneOrMore(pArg())) map { (target, arguments) ->
+fun pArgs(): Parser<Args> = pDelimited(spaces(), pGenerationTarget(), oneOrMore(pKeyValueArgument())) map { (target, arguments) ->
     val (generator, outputExtension) = target
     arguments.fold(Args(generator, outputExtension)) { result, argument ->
         when (argument) {

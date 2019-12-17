@@ -145,20 +145,30 @@ fun pTopic(): Parser<Topic> {
 fun separatedBy(parser: Parser<out Any>, sep: Parser<out Any>): Parser<List<Any>> =
         parser and zeroOrMore(sep andr parser)
 
+fun pEnumeration(): Parser<Enumeration> {
+    return optional(delimiters()) andr pDelimited(delimiters(), pString("enum"), pTypeIdentifier(),
+            pChar('{'), oneOrMore(pEnumerationItem()), pChar('}')) map { (_, id, _, items, _) ->
+        Enumeration(id, items.map {it as EnumerationItem})
+    }
+}
+
+fun pEnumerationItem() : Parser<EnumerationItem> {
+    val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_')
+    val firstChar = pAnyOf(alpha)
+    val otherChar = pAnyOf(alpha + ('0'..'9').toList())
+    val terminalChar = optional(pChar(';') or pChar(','))
+    val enumItemID = firstChar and zeroOrMore(otherChar) label "enum-item" map { it.joinToString("") }
+    return optional(delimiters()) andr pDelimited(delimiters(), enumItemID, pChar('='), pInt(), terminalChar) map { (id, _, tag, _) ->
+        EnumerationItem(id, tag)
+    }
+}
+
 fun pPackage(): Parser<Package> {
     val packagePath = separatedBy(pIdentifier(), pChar('.')) map {
         it.map { it as Identifier }.map { it.id }.joinToString(".")
     }
     return optional(delimiters()) andr pString("package") andr delimiters() andr packagePath andl optional(delimiters()) map { Package(it) }
 }
-
-//fun pPackageId(): Parser<String> {
-//    val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_')
-//    val firstChar = pAnyOf(alpha)
-//    val otherChar = pAnyOf(alpha + ('0'..'9').toList() + listOf('.'))
-//    return firstChar and zeroOrMore(otherChar) label "package-identifier" map { it.joinToString("") }
-//
-//}
 
 fun pImport(): Parser<Import> {
     val importPath = separatedBy(pIdentifier(), pChar('.')) map {
@@ -172,9 +182,11 @@ fun pImports(): Parser<List<Import>> {
 }
 
 fun pConstruct(): Parser<Construct> {
-    return delimiters() andr (pData() andl delimiters() map { Construct.DataObject(it) as Construct }) or
-            (pChoice() andl delimiters() map { Construct.ChoiceObject(it) as Construct }) or
-            (pTopic() andl delimiters() map { Construct.TopicObject(it) as Construct }) andl delimiters()
+    return delimiters() andr
+            (pData() andl optional(delimiters()) map { Construct.DataObject(it) as Construct }) or
+            (pEnumeration() andl optional(delimiters()) map { Construct.Enumeration(it) as Construct }) or
+            (pChoice() andl optional(delimiters()) map { Construct.ChoiceObject(it) as Construct }) or
+            (pTopic() andl optional(delimiters()) map { Construct.TopicObject(it) as Construct }) andl optional(delimiters())
 }
 
 fun pConstructs(): Parser<List<Construct>> {
@@ -191,6 +203,7 @@ fun pFile(): Parser<File> {
                         is Construct.DataObject -> it.data.id
                         is Construct.ChoiceObject -> it.choice.id
                         is Construct.TopicObject -> null
+                        is Construct.Enumeration -> it.enumeration.id
                     }
                 }
                 .findDuplicates()

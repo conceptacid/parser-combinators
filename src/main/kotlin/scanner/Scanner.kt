@@ -30,7 +30,8 @@ suspend fun parseIdlFilesIO(sourceDirectory: File): Either<ScannerError, List<Fi
                             is Success -> {
                                 if (!result.state.eof()) {
                                     val sample = result.state.input.substring(result.state.pos, result.state.input.length)
-                                    SingleFileParseResult.Failure(it.name, it.path, result.state.line, result.state.col, "Could not parse file after '$sample'")
+                                    SingleFileParseResult.Failure(it.name, it.path, result.state.line, result.state.col,
+                                            "Could not match any parser with the following input: '$sample'")
                                 } else {
                                     val sourceDirectoryPath = sourceDirectory.absolutePath
                                     val fileAbsolutePath = it.absolutePath

@@ -11,6 +11,7 @@ fun generateTypescriptFile(file: File): String {
             is Construct.DataObject -> generateClass(it.data)
             is Construct.ChoiceObject -> generateUnion(it.choice, file.packageIdentifier)
             is Construct.TopicObject -> generateTopics(it.topic)
+            is Construct.Enumeration -> generateEnumeration(it.enumeration)
         }
     }.joinToString("\n\n")
     return constructs
@@ -81,8 +82,7 @@ public static createFromJson(json: any): $className {
     );
     
     return obj;
-}
-"""
+}"""
 }
 
 
@@ -103,3 +103,7 @@ fun generateFieldType(fieldType: FieldType): String = when (fieldType) {
 fun generateClassField(field: Field): String = "public ${field.id.id}: ${generateFieldType(field.fieldType)}"
 
 
+fun generateEnumeration(enumeration: Enumeration): String {
+    val members = enumeration.options.map {it.id + " = \"${it.id}\""}
+    return "enum ${enumeration.id.id} {\n" + members.indentLines(1,",") + "\n}\n"
+}

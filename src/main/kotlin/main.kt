@@ -12,6 +12,7 @@ import idl.validator.ArgumentError
 import idl.validator.parseArguments
 import idl.validator.validate
 import idl.validator.validateAll
+import idl.writer.WriterError
 import idl.writer.writeFile
 import scanner.ScannerError
 import scanner.parseIdlFilesIO
@@ -22,6 +23,7 @@ sealed class Error {
     data class BadArguments(val error: ArgumentError) : Error()
     data class ScannerFinishedWithErrors(val error: ScannerError) : Error()
     data class InterfaceValidationError(val files: List<InvalidFileItem>) : Error()
+    data class WritingFileFailed(val error: WriterError) : Error()
 }
 
 
@@ -44,7 +46,7 @@ fun main(args: Array<String>) {
                 .map { (args, fileItems) ->
                     args to fileItems.map { it.path to args.generator(it.file) } // todo: map to original file path
                 }
-                .map { (args, files) ->
+                .flatMap { (args, files) ->
                     !effect {
                         if (args.replace) {
                             args.targetDirectory.deleteRecursively()
@@ -53,10 +55,10 @@ fun main(args: Array<String>) {
 
                         files.traverse(Either.applicative()) {
                             val relativePath = it.first.replaceAfterLast('.', args.outputExtension)
-                            println("creating file ${relativePath}")
+                            println("creating a file '${relativePath}'")
                             writeFile(args.targetDirectory, relativePath, it.second)
                             //println("contents follow \n${it.second}")
-                        }.fix().map { it.fix() }
+                        }.fix().map { it.fix() }.mapLeft { Error.WritingFileFailed(it) }
                     }
                 }
     }
@@ -67,8 +69,7 @@ fun main(args: Array<String>) {
                 println("$it")
                 -1
             }, {
-                println("res = $it")
-                println("SUCCESS:\n")
+                println("SUCCESS: ${it.size} file(s) written.\n")
                 0
             })
 

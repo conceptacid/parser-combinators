@@ -37,6 +37,9 @@ import parser.core.Maybe
 
 data class TypeIdentifier(val id: String)
 
+data class EnumerationItem(val id: String, val tag: Int)
+data class Enumeration(val id: TypeIdentifier, val options: List<EnumerationItem>)
+
 data class Identifier(val id: String)
 
 sealed class FieldType {
@@ -90,6 +93,7 @@ data class Import(
 )
 
 sealed class Construct {
+    data class Enumeration(val enumeration: parser.idl.Enumeration): Construct()
     data class DataObject(val data: Data): Construct()
     data class ChoiceObject(val choice: Choice): Construct()
     data class TopicObject(val topic: Topic): Construct()

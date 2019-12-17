@@ -1,5 +1,6 @@
 package generator
 
+import idl.indentLines
 import parser.core.Just
 import parser.core.None
 import parser.idl.*
@@ -24,6 +25,7 @@ fun generateKotlinFile(file: File): String {
             is Construct.DataObject -> generateDataClass(it.data)
             is Construct.ChoiceObject -> generateSealedClass(it.choice)
             is Construct.TopicObject -> generateTopics(it.topic)
+            is Construct.Enumeration -> generateEnumeration(it.enumeration)
         }
     }.joinToString("\n\n")
 
@@ -35,6 +37,11 @@ $imports
 
 $constructs
 """.trimIndent()
+}
+
+fun generateEnumeration(enumeration: Enumeration): String {
+    val members = enumeration.options.map {it.id + " = ${it.tag}"}
+    return "enum class ${enumeration.id.id} {\n" + members.indentLines(1,",") + "\n}\n"
 }
 
 fun generateTopics(topic: Topic): String {
@@ -59,7 +66,7 @@ fun generateCaseClass(data: Option, choice: Choice): String {
     val header = "${data.id.id}: ${choice.id.id}()"
 
     val lines = when (body) {
-        is Just -> listOf("data class $header {") + body.get().map { generateClassField(it) }.map { "    ${it}" } + listOf("}")
+        is Just -> listOf("data class $header {") + body.get().map { generateClassField(it) }.indentLines(1) + listOf("}")
         None -> listOf("object $header")
     }
     val text = (listOf("@Serializable") + lines)
@@ -70,11 +77,11 @@ fun generateCaseClass(data: Option, choice: Choice): String {
 }
 
 fun generateDataClass(data: Data): String {
-    val fields = data.fields.map { generateClassField(it) }.map { "    ${it}" }.joinToString(",\n")
+    val fields = data.fields.map { generateClassField(it) }
     return """
 @Serializable
 data class ${data.id.id} (
-$fields
+${fields.indentLines(1, ",")}
 )""".trimIndent()
 }
 
