@@ -187,6 +187,7 @@ fun <T : Any> choice(parsers: List<Parser<T>>): Parser<out T> = parsers.reduce {
 
 fun <T : Any> choice(vararg parser: Parser<T>) = choice(parser.toList())
 
+
 fun sequence(parsers: List<Parser<out Any>>): Parser<List<Any>> {
     val emptyParser: Parser<List<Any>> = Parser { Success<List<Any>>(emptyList(), it) }
 
