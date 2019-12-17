@@ -3,13 +3,12 @@ package idl.validator
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import generator.generateKotlinFile
+import idl.generator.generateTypescriptFile
 import parser.core.*
+import parser.idl.File
 
-enum class GenerationTarget {
-    Kotlin,
-    TypeScript,
-    Protobuf
-}
+typealias GeneratorFn = (File)->String
 
 sealed class Arg {
     data class InputPath(val path: String) : Arg()
@@ -18,12 +17,11 @@ sealed class Arg {
 }
 
 data class ArgumentParsingError(val text: String)
-data class Args(val target: GenerationTarget, val inputPath: String = "", val outputPath: String = "", val replace: Boolean = true)
+data class Args(val generator: GeneratorFn, val inputPath: String = "", val outputPath: String = "", val replace: Boolean = true)
 
-fun pGenerationTarget(): Parser<GenerationTarget> =
-        (pString("kotlin") map { GenerationTarget.Kotlin }) or
-                (pString("typescript") map { GenerationTarget.TypeScript }) or
-                (pString("protobuf") map { GenerationTarget.Protobuf })
+fun pGenerationTarget(): Parser<GeneratorFn> =
+        (pString("kotlin") map { ::generateKotlinFile as GeneratorFn}) or
+                (pString("typescript") map { ::generateTypescriptFile as GeneratorFn })
 
 fun pPath(): Parser<String> {
     val alpha = ('A'..'Z').toList() + ('a'..'z').toList() + listOf('_', '~', '/', '-')

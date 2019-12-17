@@ -3,9 +3,7 @@ package scanner
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import arrow.syntax.function.pipe
 import idl.FileItem
-import idl.ParseResult
 import idl.SingleFileParseResult
 import parser.core.*
 import parser.idl.pFile
@@ -15,7 +13,7 @@ fun findAllFilesRecursive(directory: String, extension: String): Sequence<File> 
     return File(directory).walkTopDown().filter { it.isFile && it.extension == extension }
 }
 
-fun parseIdlFiles(directory: String): ParseResult = findAllFilesRecursive(directory, "idl").toList()
+suspend fun parseIdlFilesIO(directory: String): Either<List<SingleFileParseResult.Failure>, List<FileItem>> = findAllFilesRecursive(directory, "idl").toList()
         .map {
             try {
                 val text = it.readLines().joinToString("\n")
@@ -44,13 +42,6 @@ fun parseIdlFiles(directory: String): ParseResult = findAllFilesRecursive(direct
             is SingleFileParseResult.Failure -> acc.copy(first = acc.first + res)
         } }
         .let {
-            if(it.first.isNotEmpty()) ParseResult.ParsingError(it.first)
-            else ParseResult.Success(it.second)
+            if(it.first.isNotEmpty()) it.first.left()
+            else it.second.right()
         }
-
-suspend fun parseIdlFilesIO(directory: String): Either<List<SingleFileParseResult.Failure>, List<FileItem>> = parseIdlFiles(directory).pipe {
-    when (it) {
-        is ParseResult.Success -> it.files.right()
-        is ParseResult.ParsingError -> it.files.left()
-    }
-}

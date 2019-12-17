@@ -1,5 +1,5 @@
 .gradle
 .idea
 build
-temp/
+examples/generated/
 *.iml

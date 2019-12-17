@@ -95,6 +95,6 @@ fun generateFieldType(fieldType: FieldType): String = when (fieldType) {
     is FieldType.CustomType -> fieldType.id.id
 }
 
-fun generateClassField(field: Field): String = "@SerialName(\"${field.id.id}\") val ${field.id.id}: ${generateFieldType(field.fieldType)}"
+fun generateClassField(field: Field): String = "val ${field.id.id}: ${generateFieldType(field.fieldType)}"
 
 

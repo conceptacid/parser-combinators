@@ -1,9 +1,11 @@
 package idl.validator
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import idl.FileItem
 import idl.InvalidFileItem
 import idl.SingleFileValidationResult
-import idl.ValidationResult
 
 // TODO: validate
 // 1. uniqueness of ids and tags
@@ -11,7 +13,7 @@ import idl.ValidationResult
 // 3. uniqueness of topics
 fun validate(fileItem: FileItem): SingleFileValidationResult = SingleFileValidationResult.ValidFile(fileItem)
 
-fun validateAll(fileItems: List<SingleFileValidationResult>): ValidationResult = fileItems
+fun validateAll(fileItems: List<SingleFileValidationResult>): Either<List<InvalidFileItem>, List<FileItem>> = fileItems
         .fold(  emptyList<FileItem>() to emptyList<InvalidFileItem>()  ) {acc, item ->
             when(item) {
                 is SingleFileValidationResult.ValidFile -> acc.copy(first = acc.first + item.fileItem)
@@ -19,6 +21,6 @@ fun validateAll(fileItems: List<SingleFileValidationResult>): ValidationResult =
             }
         }
         .let {
-            if(it.second.isNotEmpty()) ValidationResult.Failure(it.second)
-            else ValidationResult.Success(it.first)
+            if(it.second.isNotEmpty()) it.second.left()
+            else it.first.right()
         }

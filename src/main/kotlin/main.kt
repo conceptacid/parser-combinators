@@ -1,15 +1,13 @@
 package idl
 
 import arrow.core.flatMap
-import arrow.core.left
-import arrow.core.right
 import arrow.effects.extensions.io.fx.fx
 import arrow.syntax.function.pipe
 import generator.generateKotlinFile
+import idl.generator.generateTypescriptFile
 import idl.validator.*
 import scanner.parseIdlFilesIO
 import kotlin.system.exitProcess
-import kotlin.system.measureTimeMillis
 
 
 sealed class Error {
@@ -26,23 +24,27 @@ fun main(args: Array<String>) {
         parseArguments(args)
                 .mapLeft { Error.ArgumentError(it) }
                 .flatMap { args ->
-                    !effect { parseIdlFilesIO(args.inputPath).mapLeft { Error.IdlParsingErrors(it) }.map {args to it} }
+                    !effect { parseIdlFilesIO(args.inputPath).mapLeft { Error.IdlParsingErrors(it) }.map { args to it } }
                 }
                 .flatMap { (args, fileItems) ->
-                    val res = fileItems.map { validate(it) }.pipe(::validateAll)
-                    when (res) {
-                        is ValidationResult.Success -> (args to res.files).right()
-                        is ValidationResult.Failure -> Error.InterfaceValidationError(res.files).left()
-                    }
+                    fileItems
+                            .map { validate(it) }
+                            .pipe(::validateAll)
+                            .map { args to it }
+                            .mapLeft { Error.InterfaceValidationError(it) }
 
                 }
-                .map {(args, fileItems) ->
-                    args to when(args.target) {
-                        GenerationTarget.Kotlin -> fileItems.map { generateKotlinFile(it.file) } // todo: map to original file path
-                        GenerationTarget.TypeScript -> TODO()
-                        GenerationTarget.Protobuf -> TODO()
-                    }
+                .map { (args, fileItems) ->
+                    args to fileItems.map { it to args.generator(it.file) } // todo: map to original file path
+                }
+                .map { (args, files) ->
+                    !effect {
+                        files.map {
+                            println("creating file ${it.first}")
+                            println("contents follow \n${it.second}")
+                        }
 
+                    }
                 }
     }
 
