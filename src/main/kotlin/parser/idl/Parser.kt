@@ -88,11 +88,11 @@ fun pListOfFields(): Parser<List<Field>> {
     return pDelimited(delimiters(), pChar('{'), zeroOrMore(pField() andl delimiters()), pChar('}')) map { (_, fields, _) ->
         val res = fields.map { it as Field }
 
-        // TODO: move it to validation step
-        val duplicateFieldIds = res.map { it.id }.findDuplicates()
-        if (duplicateFieldIds.isNotEmpty()) throw RuntimeException("Duplicated field IDs: $duplicateFieldIds")
-        val duplicatedTags = res.map { it.tag }.findDuplicates()
-        if (duplicatedTags.isNotEmpty()) throw RuntimeException("Duplicated tags: $duplicatedTags")
+//        // TODO: move it to validation step
+//        val duplicateFieldIds = res.map { it.id }.findDuplicates()
+//        if (duplicateFieldIds.isNotEmpty()) throw RuntimeException("Duplicated field IDs: $duplicateFieldIds")
+//        val duplicatedTags = res.map { it.tag }.findDuplicates()
+//        if (duplicatedTags.isNotEmpty()) throw RuntimeException("Duplicated tags: $duplicatedTags")
 
         res
     }
@@ -124,9 +124,9 @@ fun pChoice(): Parser<Choice> {
     val identifier = pDelimited(delimiters(), pString("choice"), pTypeIdentifier()) map { it.b }
     val body = pChoiceBody()
     return pDelimited(delimiters(), identifier, body) map { (identifier, options) ->
-        // TODO: move it validation
-        val duplicateIDs = options.map { it.id }.findDuplicates()
-        if (duplicateIDs.isNotEmpty()) throw RuntimeException("Duplicated option types: $duplicateIDs")
+//        // TODO: move it validation
+//        val duplicateIDs = options.map { it.id }.findDuplicates()
+//        if (duplicateIDs.isNotEmpty()) throw RuntimeException("Duplicated option types: $duplicateIDs")
         Choice(identifier, options)
     }
 }
@@ -195,9 +195,6 @@ fun pConstructs(): Parser<List<Construct>> {
 
 fun pFile(): Parser<File> {
     return pDelimited(delimiters(), pPackage(), pImports(), pConstructs()) map { (packageIdentity, imports, objects) ->
-
-
-
         File(packageIdentity, imports, objects)
     }
 }
