@@ -8,8 +8,8 @@ import arrow.data.extensions.list.traverse.traverse
 import arrow.data.fix
 import arrow.effects.extensions.io.fx.fx
 import arrow.syntax.function.pipe
-import idl.validator.ArgumentError
-import idl.validator.parseArguments
+import idl.parser.args.ArgumentError
+import idl.parser.args.parseArguments
 import idl.validator.validate
 import idl.validator.validateAll
 import idl.writer.WriterError
@@ -55,7 +55,7 @@ fun main(args: Array<String>) {
 
                         files.traverse(Either.applicative()) {
                             val relativePath = it.first.replaceAfterLast('.', args.outputExtension)
-                            println("creating a file '${relativePath}'")
+                            println(" - creating a file '${relativePath}'")
                             writeFile(args.targetDirectory, relativePath, it.second)
                             //println("contents follow \n${it.second}")
                         }.fix().map { it.fix() }.mapLeft { Error.WritingFileFailed(it) }

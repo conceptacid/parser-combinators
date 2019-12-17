@@ -1,6 +1,7 @@
 package idl
 
 import parser.idl.File
+import parser.idl.TypeIdentifier
 
 sealed class SingleFileParseResult {
     data class Success(val item: FileItem) : SingleFileParseResult()
@@ -8,11 +9,12 @@ sealed class SingleFileParseResult {
 }
 
 data class FileItem(val name: String, val path: String, val file: File)
-data class InvalidFileItem(val name: String, val path: String, val error: String)
+data class InvalidFileItem(val name: String, val path: String, val error: FileValidationError)
 
-sealed class SingleFileValidationResult {
-    data class ValidFile(val fileItem: FileItem): SingleFileValidationResult()
-    data class ErrorFile(val fileItem: FileItem, val error: String): SingleFileValidationResult()
+sealed class FileValidationError {
+    abstract val fileItem: FileItem
+    data class DuplicateTypeIdentifiers(override val fileItem: FileItem, val typeIDs: List<TypeIdentifier>): FileValidationError()
+    data class ErrorFile(override val fileItem: FileItem, val error: String): FileValidationError()
 }
 
 

@@ -183,10 +183,10 @@ fun pImports(): Parser<List<Import>> {
 
 fun pConstruct(): Parser<Construct> {
     return delimiters() andr
-            (pData() andl optional(delimiters()) map { Construct.DataObject(it) as Construct }) or
-            (pEnumeration() andl optional(delimiters()) map { Construct.Enumeration(it) as Construct }) or
-            (pChoice() andl optional(delimiters()) map { Construct.ChoiceObject(it) as Construct }) or
-            (pTopic() andl optional(delimiters()) map { Construct.TopicObject(it) as Construct }) andl optional(delimiters())
+            (pData() andl optional(delimiters()) label "data-construct" map { Construct.DataObject(it) as Construct }) or
+            (pEnumeration() andl optional(delimiters()) label "enumeration-construct" map { Construct.Enumeration(it) as Construct }) or
+            (pChoice() andl optional(delimiters()) label "choice-construct" map { Construct.ChoiceObject(it) as Construct }) or
+            (pTopic() andl optional(delimiters()) label "topic-construct" map { Construct.TopicObject(it) as Construct }) andl optional(delimiters())
 }
 
 fun pConstructs(): Parser<List<Construct>> {
@@ -196,18 +196,7 @@ fun pConstructs(): Parser<List<Construct>> {
 fun pFile(): Parser<File> {
     return pDelimited(delimiters(), pPackage(), pImports(), pConstructs()) map { (packageIdentity, imports, objects) ->
 
-        // TODO: move it validation
-        val duplicateTypes = objects
-                .mapNotNull {
-                    when (it) {
-                        is Construct.DataObject -> it.data.id
-                        is Construct.ChoiceObject -> it.choice.id
-                        is Construct.TopicObject -> null
-                        is Construct.Enumeration -> it.enumeration.id
-                    }
-                }
-                .findDuplicates()
-        if (duplicateTypes.isNotEmpty()) throw RuntimeException("Duplicate type definitions: ${duplicateTypes}")
+
 
         File(packageIdentity, imports, objects)
     }

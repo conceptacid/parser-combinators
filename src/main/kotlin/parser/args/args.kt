@@ -1,4 +1,4 @@
-package idl.validator
+package idl.parser.args
 
 import arrow.core.Either
 import arrow.core.extensions.either.applicative.applicative
@@ -28,7 +28,7 @@ sealed class ArgumentError {
 
 
 
-data class Args(val generator: GeneratorFn, val outputExtension: String,  val inputPath: String = "", val outputPath: String = "", val replace: Boolean = true)
+data class Args(val generator: GeneratorFn, val outputExtension: String, val inputPath: String = "", val outputPath: String = "", val replace: Boolean = true)
 data class ValidatedArguments(val generator: GeneratorFn, val outputExtension: String, val sourceDirectory: File, val targetDirectory: File, val replace: Boolean)
 
 fun pGenerationTarget(): Parser<Pair<GeneratorFn, String>> =

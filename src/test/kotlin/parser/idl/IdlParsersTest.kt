@@ -133,7 +133,7 @@ class IdlParsersTest {
     @Test
     fun `enum construct Parser`() {
         val input = """
-            enum Direction {
+            enum Direction 2{
                 Up = 0;
                 Down = 1;
                 Left = 2;
@@ -176,30 +176,4 @@ class IdlParsersTest {
                 .isEqualTo(Success(output, State(input = input, col = 29, pos = input.length, line = 1)))
     }
 
-    @Test
-    fun `real file`() {
-
-        println(System.getProperty("user.dir"))
-
-        val f = File("src/test/kotlin/parser/idl/example.idl")
-        f.useLines {
-            val lines = it.toList().joinToString("\n")
-            //println(lines)
-            val res = pFile().run(State(lines))
-            //println(res)
-            val ast = res as Success<parser.idl.File>
-            if(!ast.state.eof()) {
-                println("remaining input: $res")
-                throw RuntimeException("not all lines parsed")
-            }
-            println("\nPARSED:")
-            println(ast.value.packageIdentifier)
-            println(ast.value.imports.joinToString("\n"))
-            println(ast.value.objects.joinToString("\n"))
-        }
-
-    }
 }
-
-
-// TODO: check uniqueness of field ids and tags
