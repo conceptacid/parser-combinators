@@ -17,7 +17,7 @@ fun validate(fileItem: FileItem): Either<FileValidationError, FileItem> {
 
 
     // TODO: check types across all files unique by {ID, package}
-    val duplicateTypes = fileItem.file.objects
+    val duplicateTypes = fileItem.file.constructs
             .mapNotNull {
                 when (it) {
                     is Construct.DataObject -> it.data.id

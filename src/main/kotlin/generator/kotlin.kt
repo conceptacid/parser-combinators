@@ -20,7 +20,7 @@ fun generateKotlinFile(file: File): String {
             }
             .joinToString("\n")
 
-    val constructs = file.objects.map {
+    val constructs = file.constructs.map {
         when (it) {
             is Construct.DataObject -> generateDataClass(it.data)
             is Construct.ChoiceObject -> generateSealedClass(it.choice)

@@ -1,6 +1,7 @@
 package net.conceptacid.Stuff
 import net.bla
 
+
 data State {
     x: Int32, tag = 1;
     y: Int32, tag = 2;

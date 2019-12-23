@@ -6,7 +6,7 @@ import parser.core.None
 import parser.idl.*
 
 fun generateTypescriptFile(file: File): String {
-    val constructs = file.objects.map {
+    val constructs = file.constructs.map {
         when (it) {
             is Construct.DataObject -> generateClass(it.data)
             is Construct.ChoiceObject -> generateUnion(it.choice, file.packageIdentifier)

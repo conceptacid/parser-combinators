@@ -4,5 +4,8 @@ choice Source {
     option Silence, tag = 1;
     option Signal {
         producerID: String, tag = 1;
+        myProducer: Producer, tag = 2;
     }, tag = 2;
 }
+
+topic "nios:api1/bla", request = Source

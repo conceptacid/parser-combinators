@@ -102,5 +102,5 @@ sealed class Construct {
 data class File(
         val packageIdentifier: Package,
         val imports: List<Import>,
-        val objects: List<Construct>
+        val constructs: List<Construct>
 )
